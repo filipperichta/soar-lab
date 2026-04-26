@@ -28,7 +28,11 @@ Vagrant.configure("2") do |config|
   		soc.vm.network "forwarded_port", guest: 55000, host: 55000
   		# Wazuh Indexer (optional - for debugging)
   		soc.vm.network "forwarded_port", guest: 9200, host: 9200
-		
+		# Shuffle web UI (HTTP)
+		soc.vm.network "forwarded_port", guest: 3001, host: 3001
+		# Shuffle web UI (HTTPS)
+		soc.vm.network "forwarded_port", guest: 3443, host: 3443
+
 		soc.vm.network "private_network", ip: SOC_IP
 		soc.vm.provider "virtualbox" do |v|
   			v.memory = 16384 # Splunk 8GB + Wazuch single stack installation 8GB as per minimal requiremnts found in documentation
@@ -44,10 +48,24 @@ Vagrant.configure("2") do |config|
 		end
 		
 		soc.vm.provision "shell", inline: <<-SHELL
+
+			# ============================================================
+  			# KERNEL PARAMETERS
+  			# ============================================================
+			
   			# Required for Wazuh Indexer component.
 			# For more information search for Docker host requirements at: https://documentation.wazuh.com/current/deployment-options/docker/wazuh-container.html#single-node-stack
 			echo 'vm.max_map_count=262144' > /etc/sysctl.d/99-wazuh.conf
   			sysctl -w vm.max_map_count=262144
+
+			# Disable swap persistently - required for OpenSearch (Wazuh + Shuffle)
+			# https://opensearch.org/docs/latest/install-and-configure/install-opensearch/index/
+			sed -i '/swap/s/^/#/' /etc/fstab
+			swapoff -a
+
+			# ============================================================
+			# DISK EXPANSION
+  			# ============================================================
 
 			# Expand partition and LVM to use full disk
   			apt-get install -y cloud-guest-utils
@@ -56,6 +74,10 @@ Vagrant.configure("2") do |config|
   			lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
   			resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
 			
+			# ============================================================
+  			# WAZUH SINGLE NODE STACK
+  			# ============================================================
+
 			# Install Wazuh single node stack
   			# https://documentation.wazuh.com/current/deployment-options/docker/wazuh-container.html#single-node-stack
   			cd /home/vagrant
@@ -64,12 +86,16 @@ Vagrant.configure("2") do |config|
 
   			# Generate certificates - mandatory prerequisite
   			docker compose -f generate-indexer-certs.yml run --rm generator
-
-  			# Start Wazuh stack
+			
+			# Start Wazuh stack
   			docker compose up -d
 
-			# Wait for Wazuh to be ready before configuring
- 			echo "Waiting for Wazuh to initialize..."
+			# ============================================================
+  			# SPLUNK CONFIGURATION
+  			# ============================================================
+
+			# Wait for Splunk to be ready before configuring
+ 			echo "Waiting for Splunk to initialize..."
   			sleep 60
 
 			# Configure Splunk receiving port and wazuh-alerts index
@@ -77,9 +103,14 @@ Vagrant.configure("2") do |config|
     		/opt/splunk/bin/splunk enable listen 9997 \
     		-auth admin:#{SPLUNK_PASSWORD}
 
+			# Create wazuh-alerts index
 			docker exec -u splunk splunk-splunk \
     		/opt/splunk/bin/splunk add index wazuh-alerts \
     		-auth admin:#{SPLUNK_PASSWORD}
+			
+ 			# ============================================================
+  			# SPLUNK UNIVERSAL FORWARDER
+  			# ============================================================
 
 			# Download and install Splunk Universal Forwarder
   			# Note: URL from https://www.splunk.com/en_us/download/universal-forwarder.html
@@ -111,7 +142,27 @@ Vagrant.configure("2") do |config|
   			--answer-yes \
   			--no-prompt
 
-  			#/opt/splunkforwarder/bin/splunk enable boot-start
+			# ============================================================
+  			# SHUFFLE SOAR
+  			# ============================================================
+
+  			# Install Shuffle SOAR
+			# https://github.com/Shuffle/Shuffle/blob/main/.github/install-guide.md
+			git clone https://github.com/Shuffle/Shuffle /home/vagrant/shuffle
+			cd /home/vagrant/shuffle
+
+			# Apply lab-specific patches to official docker-compose.yml
+			# Patch 1: fix port conflict with Wazuh OpenSearch on 9200
+			sed -i 's/- 9200:9200/- 9201:9200/' docker-compose.yml
+			# Patch 2: reduce OpenSearch heap from 3072m to 1024m for lab RAM constraints
+			sed -i 's/-Xms3072m -Xmx3072m/-Xms1024m -Xmx1024m/' docker-compose.yml
+			# Fix prerequisites as per official install guide
+			mkdir -p shuffle-database shuffle-apps shuffle-files
+			chown -R 1000:1000 shuffle-database
+			swapoff -a
+
+			# Start Shuffle
+			docker compose up -d
 	  		SHELL
 	end   
 	
