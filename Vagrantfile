@@ -21,17 +21,17 @@ Vagrant.configure("2") do |config|
 		soc.vm.disk :disk, size: "100GB", primary: true
 		
 		# Splunk
-  		soc.vm.network "forwarded_port", guest: 8000, host: 8000
+  		soc.vm.network "forwarded_port", guest: 8000, host: SPLUNK_WEB_PORT
   		# Wazuh Dashboard
-  		soc.vm.network "forwarded_port", guest: 443, host: 8443
+  		soc.vm.network "forwarded_port", guest: 443, host: WAZUH_DASHBOARD_PORT
   		# Wazuh API
-  		soc.vm.network "forwarded_port", guest: 55000, host: 55000
+  		soc.vm.network "forwarded_port", guest: 55000, host: WAZUH_API_PORT
   		# Wazuh Indexer (optional - for debugging)
-  		soc.vm.network "forwarded_port", guest: 9200, host: 9200
+  		soc.vm.network "forwarded_port", guest: 9200, host: WAZUH_INDEXER_PORT
 		# Shuffle web UI (HTTP)
-		soc.vm.network "forwarded_port", guest: 3001, host: 3001
+		soc.vm.network "forwarded_port", guest: 3001, host: SHUFFLE_HTTP_PORT
 		# Shuffle web UI (HTTPS)
-		soc.vm.network "forwarded_port", guest: 3443, host: 3443
+		soc.vm.network "forwarded_port", guest: 3443, host: SHUFFLE_HTTPS_PORT
 
 		soc.vm.network "private_network", ip: SOC_IP
 		soc.vm.provider "virtualbox" do |v|
@@ -40,8 +40,8 @@ Vagrant.configure("2") do |config|
 		end
 		soc.vm.provision "docker" do |d|
 			d.run "splunk/splunk",
-			args: " -p 8000:8000 \
-					-p 9997:9997 \
+			args: " -p #{SPLUNK_WEB_PORT}:8000 \
+					-p #{SPLUNK_RECEIVING_PORT}:9997 \
 				    -e SPLUNK_PASSWORD=#{SPLUNK_PASSWORD} \
 					-e SPLUNK_START_ARGS=--accept-license \
 					-e SPLUNK_GENERAL_TERMS=--accept-sgt-current-at-splunk-com"
