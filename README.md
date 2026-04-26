@@ -44,3 +44,5 @@ graph TB
     BROWSER -->|:8443| WAZUH_DSH
     BROWSER -->|:3001| SHUFFLE_FE
 ```
+> Note: Splunk Universal Forwarder runs on the SOC VM. 
+> Host Browser represents access from the Windows 11 host machine.
