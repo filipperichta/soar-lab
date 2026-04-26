@@ -1,1 +1,3 @@
 .vagrant/
+secrets.rb
+config.rb
