@@ -3,10 +3,10 @@
 ```mermaid
 graph TB
     subgraph HOST["Windows 11 Host"]
-        subgraph SOC["SOC VM 192.168.33.10 - 16GB RAM"]
+        subgraph SOC["SOC VM — 192.168.33.10 — 16GB RAM"]
             subgraph DOCKER["Docker Engine"]
                 SPLUNK["Splunk Enterprise\nWeb :8000 / Receiving :9997"]
-                WAZUH_MGR["Wazuh Manager\nAgents :1514 / Enrollment :1515 / API :55000"]
+                WAZUH_MGR["Wazuh Manager\nAgents :1514 / Enroll :1515 / API :55000"]
                 WAZUH_IDX["Wazuh Indexer :9200"]
                 WAZUH_DSH["Wazuh Dashboard :443"]
                 SHUFFLE_FE["Shuffle Frontend :3001"]
@@ -16,13 +16,15 @@ graph TB
             end
             UF["Splunk Universal Forwarder"]
         end
-        subgraph WIN["Windows Endpoint 192.168.33.20 - 4GB RAM"]
+        subgraph WIN["Windows Endpoint — 192.168.33.20 — 4GB"]
             WAZUH_WIN["Wazuh Agent"]
         end
-        subgraph LINUX["Linux Endpoint 192.168.33.30 - 2GB RAM"]
+        subgraph LIN["Linux Endpoint — 192.168.33.30 — 2GB"]
             WAZUH_LIN["Wazuh Agent"]
         end
     end
+
+    BROWSER["Host Browser"]
 
     WAZUH_WIN -->|TCP 1514/1515| WAZUH_MGR
     WAZUH_LIN -->|TCP 1514/1515| WAZUH_MGR
@@ -35,7 +37,6 @@ graph TB
     SHUFFLE_BE --- SHUFFLE_OR
     SHUFFLE_FE --- SHUFFLE_BE
 
-    BROWSER["Host Browser"]
     BROWSER -->|:8000| SPLUNK
     BROWSER -->|:8443| WAZUH_DSH
     BROWSER -->|:3001| SHUFFLE_FE
