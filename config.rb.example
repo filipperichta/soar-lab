@@ -1,0 +1,7 @@
+# Copy this to config.rb and adjust values if needed
+# config.rb is in .gitignore
+
+# Network configuration
+SOC_IP = "192.168.33.10"
+WIN_IP = "192.168.33.20"
+LINUX_IP = "192.168.33.30"
