@@ -2,6 +2,8 @@
 
 An automated Security Operations Center built entirely as code. This lab deploys a fully integrated security stack — Wazuh, Splunk, and Shuffle SOAR — across three virtual machines using Vagrant and Docker. A single `vagrant up` provisions the entire environment from scratch with zero manual steps.
 
+---
+
 ## Architecture
 
 ```mermaid
@@ -47,6 +49,8 @@ graph TB
 
 > Splunk Universal Forwarder runs on the SOC VM. Host Browser represents access from the Windows 11 host machine.
 
+---
+
 ## Stack
 
 | Component | Role | Version |
@@ -68,6 +72,8 @@ graph TB
 | `filipovo/windows-11-enter-eval-25H2` | Windows endpoint | Published on Vagrant Cloud. Built from the official Microsoft Windows 11 Enterprise Evaluation ISO (25H2, Build 26100) using the bento Packer project with VirtualBox provider. |
 | `bento/ubuntu-25.04` | SOC VM and Linux endpoint | Community box maintained by the bento project. |
 
+---
+
 ## Infrastructure
 
 Three virtual machines are provisioned automatically:
@@ -78,6 +84,8 @@ Three virtual machines are provisioned automatically:
 
 **Linux Endpoint** (`192.168.33.30`, 2GB RAM, 2 vCPUs) runs Ubuntu 25.04 with Wazuh agent installed and enrolled automatically during provisioning. Uses `bento/ubuntu-25.04`.
 
+---
+
 ## Prerequisites
 
 **Host machine:**
@@ -87,11 +95,13 @@ Three virtual machines are provisioned automatically:
 - [Git](https://git-scm.com/)
 
 **Accounts:**
-- Splunk account for Universal Forwarder download — free registration at [splunk.com](https://www.splunk.com/en_us/download/universal-forwarder.html). The download URL is set in the Vagrantfile provisioner.
+- Splunk account for Universal Forwarder download — free registration at [splunk.com](https://www.splunk.com/en_us/download/universal-forwarder.html). The download URL is pre-configured in the Vagrantfile provisioner.
 
 **Vagrant boxes downloaded automatically on first `vagrant up`:**
 - `filipovo/windows-11-enter-eval-25H2` (~8GB)
 - `bento/ubuntu-25.04` (~1GB)
+
+---
 
 ## Quick Start
 
@@ -111,7 +121,9 @@ cp config.rb.example config.rb
 vagrant up
 ```
 
-Provisioning takes approximately 30-45 minutes on first run due to Docker image downloads. Subsequent `vagrant up` after `vagrant halt` is significantly faster as images are cached on the VM disk.
+Provisioning takes approximately 30–45 minutes on first run due to Docker image downloads. Subsequent `vagrant up` after `vagrant halt` is significantly faster as images are cached on the VM disk.
+
+---
 
 ## Configuration
 
@@ -145,6 +157,8 @@ SHUFFLE_HTTP_PORT = 3001
 SHUFFLE_HTTPS_PORT = 3443
 ```
 
+---
+
 ## Accessing Services
 
 Once `vagrant up` completes, allow 5 minutes for all services to fully initialize before accessing them.
@@ -159,6 +173,96 @@ Verify Wazuh alerts are flowing into Splunk:
 ```
 index="wazuh-alerts"
 ```
+
+---
+
+## Lab in Action
+
+### All VMs Running
+
+![vagrant status](docs/assets/images/vagrant-status.png)
+
+*All three VMs running after `vagrant up` completes*
+
+### Provisioning — SOC VM
+
+![SOC VM provisioning](docs/assets/images/vagrant-provisioning-soc.png)
+
+*SOC VM provisioning — Wazuh stack deployment, Splunk receiving port configuration, and Universal Forwarder download*
+
+### Provisioning — Shuffle SOAR and Windows Endpoint
+
+![Shuffle and Windows provisioning](docs/assets/images/vagrant-provisioning-shuffle.png)
+
+*Shuffle SOAR containers starting alongside the Windows endpoint boot sequence*
+
+### Provisioning — Linux Endpoint
+
+![Linux endpoint provisioning](docs/assets/images/vagrant-provisioning-linux.png)
+
+*Linux endpoint Wazuh agent installed and enrolled automatically*
+
+### All Containers Running
+
+![Docker containers](docs/assets/images/docker-containers.png)
+
+*Seven containers running on the SOC VM — Wazuh stack, Splunk Enterprise, and Shuffle SOAR*
+
+### Universal Forwarder Active
+
+![Splunk forwarder](docs/assets/images/splunk-forwarder-active.png)
+
+*Splunk Universal Forwarder actively forwarding Wazuh alerts to Splunk on port 9997*
+
+---
+
+## Wazuh
+
+### Both Agents Active
+
+![Wazuh agents](docs/assets/images/wazuh-agents-active.png)
+
+*win-endpoint (Windows 11 Enterprise Evaluation) and linux-endpoint (Ubuntu 25.04) both active and connected to Wazuh Manager*
+
+### Security Overview
+
+![Wazuh overview](docs/assets/images/wazuh-overview-dashboard.png)
+
+*Wazuh overview dashboard showing active agents, 24-hour alert breakdown by severity, and available security modules — MITRE ATT&CK, File Integrity Monitoring, Vulnerability Detection, CIS compliance, PCI DSS, GDPR, and HIPAA*
+
+---
+
+## Splunk
+
+### Wazuh Alerts Indexed
+
+![Splunk alerts](docs/assets/images/splunk-wazuh-alerts.png)
+
+*579 Wazuh alerts indexed in Splunk with fully parsed JSON fields — agent details, rule information, MITRE ATT&CK mappings, Windows event data, and CIS compliance findings all searchable via SPL*
+
+### Search Interface
+
+![Splunk search](docs/assets/images/splunk-search.png)
+
+*Splunk Search & Reporting — the primary interface for correlation, hunting, and detection rule development*
+
+---
+
+## Shuffle SOAR
+
+### SOAR Platform
+
+![Shuffle SOAR](docs/assets/images/shuffle-soar-apps.png)
+
+*Shuffle SOAR running and accessible — ready for playbook development across Cases, SIEM, EDR, Email, Network, and IAM integrations*
+
+### Community Workflows
+
+![Shuffle workflows](docs/assets/images/shuffle-workflows.png)
+
+*Shuffle community workflows including Wazuh ticket handler, alert enrichment, and phishing detection playbooks available as starting points*
+
+---
 
 ## Architectural Decisions
 
@@ -188,7 +292,9 @@ Sensitive values (`SPLUNK_PASSWORD`) live in `secrets.rb`. Non-sensitive configu
 
 ### Custom Windows 11 Vagrant box
 
-The `filipovo/windows-11-enter-eval-25H2` box was built from the official Microsoft Windows 11 Enterprise Evaluation ISO using the bento Packer project rather than using a community box of unknown provenance. This provides a documented, reproducible build process and a known baseline. The box is published on Vagrant Cloud for use by anyone cloning this lab. An alternative approach using `gusztavvargadr/windows-11` is available if you prefer not to use the custom box — change the `win.vm.box` value in the Vagrantfile.
+The `filipovo/windows-11-enter-eval-25H2` box was built from the official Microsoft Windows 11 Enterprise Evaluation ISO using the bento Packer project rather than using a community box of unknown provenance. This provides a documented, reproducible build process and a known baseline. The box is published on Vagrant Cloud for use by anyone cloning this lab. An alternative using `gusztavvargadr/windows-11` is available if you prefer not to use the custom box — change the `win.vm.box` value in the Vagrantfile.
+
+---
 
 ## Known Limitations
 
@@ -203,6 +309,8 @@ The `filipovo/windows-11-enter-eval-25H2` box was built from the official Micros
 **Swap disabled persistently.** OpenSearch components (both Wazuh Indexer and Shuffle OpenSearch) require swap to be disabled for correct operation. The provisioner disables swap for the current session and comments out the swap entry in `/etc/fstab` to prevent it from re-enabling on reboot. This affects the entire SOC VM.
 
 **Wazuh agent MANAGER_IP environment variable.** On Ubuntu 25.04 with Wazuh 4.14.4, the `WAZUH_MANAGER` environment variable passed during `apt-get install` is not applied to the agent configuration file. The provisioner works around this by using `sed` to replace the `MANAGER_IP` placeholder in `/var/ossec/etc/ossec.conf` directly after installation.
+
+---
 
 ## Development Notes
 
