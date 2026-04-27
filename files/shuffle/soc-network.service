@@ -1,0 +1,17 @@
+[Unit]
+Description=Connect Splunk container to Shuffle Docker network
+Documentation=https://github.com/filipperichta/soar-lab
+After=docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+# Wait for containers to fully start before connecting networks
+ExecStartPre=/bin/sleep 30
+ExecStart=/bin/bash -c 'docker network connect shuffle_shuffle splunk-splunk 2>/dev/null || true'
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
