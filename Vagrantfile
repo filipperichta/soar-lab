@@ -164,10 +164,16 @@ Vagrant.configure("2") do |config|
 			# Start Shuffle
 			docker compose up -d
 
-			# Connect Splunk to Shuffle network for webhook communication
-    		docker network connect shuffle_shuffle splunk-splunk 2>/dev/null || true
-    		echo "Splunk connected to shuffle_shuffle network"
+			# ============================================================
+			# DOCKER NETWORK - Persistent Splunk <-> Shuffle connectivity
+			# ============================================================
 
+			# Install systemd service from shared folder
+			cp /vagrant/files/shuffle/soc-network.service /etc/systemd/system/soc-network.service
+			systemctl daemon-reload
+			systemctl enable soc-network.service
+			systemctl start soc-network.service
+			echo "soc-network.service installed, enabled and started"
 	  		SHELL
 	end   
 	
