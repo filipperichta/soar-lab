@@ -163,6 +163,11 @@ Vagrant.configure("2") do |config|
 
 			# Start Shuffle
 			docker compose up -d
+
+			# Connect Splunk to Shuffle network for webhook communication
+    		docker network connect shuffle_shuffle splunk-splunk 2>/dev/null || true
+    		echo "Splunk connected to shuffle_shuffle network"
+
 	  		SHELL
 	end   
 	
