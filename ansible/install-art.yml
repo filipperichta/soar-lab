@@ -1,0 +1,58 @@
+---
+# =============================================================
+# install-art.yml — Install Atomic Red Team on Windows endpoint
+# =============================================================
+# Usage:
+#   ansible-playbook -i ansible/inventory.ini ansible/install-art.yml
+#
+# Requirements on control node:
+#   pip install pywinrm
+#   ansible-galaxy collection install ansible.windows
+# =============================================================
+
+- name: Install Atomic Red Team on Windows endpoint
+  hosts: windows
+  gather_facts: false
+
+  vars:
+    art_install_path: 'C:\AtomicRedTeam'
+    execution_policy: Bypass
+
+  tasks:
+
+    - name: Set PowerShell execution policy to Bypass for current user
+      ansible.windows.win_powershell:
+        script: |
+          Set-ExecutionPolicy Bypass -Scope CurrentUser -Force
+          Write-Output "ExecutionPolicy set to Bypass"
+
+    - name: Install NuGet package provider
+      ansible.windows.win_powershell:
+        script: |
+          Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
+          Write-Output "NuGet installed"
+
+    - name: Install Invoke-AtomicRedTeam and powershell-yaml modules
+      ansible.windows.win_powershell:
+        script: |
+          Install-Module -Name invoke-atomicredteam, powershell-yaml `
+            -Scope CurrentUser -Force -AllowClobber
+          Write-Output "Modules installed"
+
+    - name: Download and run Atomic Red Team installer
+      ansible.windows.win_powershell:
+        script: |
+          IEX (IWR 'https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1' -UseBasicParsing)
+          Install-AtomicRedTeam -getAtomics -Force -InstallPath '{{ art_install_path }}'
+          Write-Output "ART installed at {{ art_install_path }}"
+
+    - name: Verify installation — list T1059.001 tests
+      ansible.windows.win_powershell:
+        script: |
+          Import-Module invoke-atomicredteam
+          Invoke-AtomicTest T1059.001 -ShowDetailsBrief
+      register: art_verify
+
+    - name: Print verification output
+      debug:
+        msg: "{{ art_verify.output }}"
