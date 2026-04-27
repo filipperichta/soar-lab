@@ -187,6 +187,25 @@ Vagrant.configure("2") do |config|
     		Start-Sleep -Seconds 10
     		# Start Wazuh service
     		NET START WazuhSvc
+			
+			# Enable PowerShell Script Block Logging
+  			$sbPath = 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\\ScriptBlockLogging'
+  			New-Item -Path $sbPath -Force | Out-Null
+  			Set-ItemProperty -Path $sbPath -Name EnableScriptBlockLogging -Value 1 -Force
+
+  			# Add PowerShell log channel to Wazuh agent
+			$file = 'C:\\Program Files (x86)\\ossec-agent\\ossec.conf'
+  			$content = Get-Content $file -Raw
+  			if ($content -notmatch 'PowerShell/Operational') {
+				  		$insert = '<localfile><location>Microsoft-Windows-PowerShell/Operational</location><log_format>eventchannel</log_format></localfile>'
+    					$content = $content -replace '</ossec_config>', "$insert`n</ossec_config>"
+    					Set-Content $file $content
+    					Write-Output 'PowerShell logging added to Wazuh config'
+  			} else {
+    					Write-Output 'PowerShell logging already present - skipping'
+  			}
+  			Restart-Service WazuhSvc -Force
+
   			SHELL
 	end
 
