@@ -210,7 +210,8 @@ Vagrant.configure("2") do |config|
 			$file = 'C:\\Program Files (x86)\\ossec-agent\\ossec.conf'
   			$content = Get-Content $file -Raw
   			if ($content -notmatch 'PowerShell/Operational') {
-				  		$insert = '<localfile><location>Microsoft-Windows-PowerShell/Operational</location><log_format>eventchannel</log_format></localfile>'
+				  		$insert = '<localfile><location>Microsoft-Windows-PowerShell/Operational</location><log_format>eventchannel</log_format></localfile>`
+								   <localfile><location>Microsoft-Windows-Sysmon/Operational</location><log_format>eventchannel</log_format></localfile>'
     					$content = $content -replace '</ossec_config>', "$insert`n</ossec_config>"
     					Set-Content $file $content
     					Write-Output 'PowerShell logging added to Wazuh config'
