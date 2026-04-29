@@ -35,7 +35,7 @@ Vagrant.configure("2") do |config|
 
 		soc.vm.network "private_network", ip: SOC_IP
 		soc.vm.provider "virtualbox" do |v|
-  			v.memory = 16384 # Splunk 8GB + Wazuch single stack installation 8GB as per minimal requiremnts found in documentation
+  			v.memory = 20480 # Splunk 8GB + Wazuch single stack installation 8GB + 4GB Shuffle as per minimal requiremnts found in documentation
 			v.cpus = 4
 		end
 		soc.vm.provision "docker" do |d|
@@ -155,7 +155,7 @@ Vagrant.configure("2") do |config|
 			# Patch 1: fix port conflict with Wazuh OpenSearch on 9200
 			sed -i 's/- 9200:9200/- 9201:9200/' docker-compose.yml
 			# Patch 2: reduce OpenSearch heap from 3072m to 1024m for lab RAM constraints
-			sed -i 's/-Xms3072m -Xmx3072m/-Xms1024m -Xmx1024m/' docker-compose.yml
+			# sed -i 's/-Xms3072m -Xmx3072m/-Xms1024m -Xmx1024m/' docker-compose.yml
 			# Fix prerequisites as per official install guide
 			mkdir -p shuffle-database shuffle-apps shuffle-files
 			chown -R 1000:1000 shuffle-database
@@ -165,7 +165,7 @@ Vagrant.configure("2") do |config|
 			docker compose up -d
 
 			# ============================================================
-			# DOCKER NETWORK - Persistent Splunk <-> Shuffle connectivity
+			# DOCKER NETWORK - Persistent Splunk <-> Shuffle connectivity 
 			# ============================================================
 
 			# Install systemd service from shared folder
@@ -174,6 +174,8 @@ Vagrant.configure("2") do |config|
 			systemctl enable soc-network.service
 			systemctl start soc-network.service
 			echo "soc-network.service installed, enabled and started"
+			
+			
 	  		SHELL
 	end   
 	
